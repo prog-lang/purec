@@ -2,7 +2,15 @@
 name = "pure-asm"
 version = "0.1.0"
 edition = "2021"
+authors = ["Viktor A. Rozenko Voitenko <sharp.vik@gmail.com>"]
+description = "Pure Assembler"
+license = "MIT"
+readme = "README.md"
+documentation = "https://github.com/prog-lang/pure-asm#readme"
+homepage = "https://github.com/prog-lang/pure-asm#readme"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+pest = "2.7.7"
+pest_derive = "2.7.7"
