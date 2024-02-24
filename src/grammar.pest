@@ -1,13 +1,15 @@
 file = 
  _{ SOI
-  ~ declaration*
+  ~ insrtuction*
   ~ EOI
   }
 
-declaration = { label? ~ opcode ~ operand? ~ ";" }
+insrtuction = { label? ~ opcode ~ operand? ~ ";" }
+
 label = { id ~ ":" }
 opcode = @{ ASCII_ALPHA_UPPER ~ ("_" | ASCII_ALPHA_UPPER | ASCII_DIGIT)+ }
 operand = { int | id }
+
 int = @{ "0" | ("-"? ~ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) }
 id = @{ (name ~ ".")+ ~ name }
 name = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
