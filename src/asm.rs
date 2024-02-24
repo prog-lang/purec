@@ -11,13 +11,36 @@ impl Program {
         }
     }
 
+    pub fn from(data: Vec<u8>, code: Vec<Op>) -> Self {
+        Self { data, code }
+    }
+
     pub fn as_vec(&self) -> Vec<u8> {
-        let mut v = (self.data.len() as i32).to_le_bytes().to_vec();
-        v.extend_from_slice(self.data.as_slice());
+        let mut v = self.data_vec();
         for op in self.code.iter() {
             v.extend_from_slice(op.as_vec().as_slice());
         }
         v
+    }
+
+    /// Data is going to be aligned to 64 bits.
+    fn data_vec(&self) -> Vec<u8> {
+        let length = self.aligned_data_length();
+        let padding = length - self.data.len();
+        let mut v = (length as u64).to_le_bytes().to_vec();
+        v.extend_from_slice(self.data.as_slice());
+        v.extend_from_slice(vec![0; padding].as_slice());
+        v
+    }
+
+    fn aligned_data_length(&self) -> usize {
+        let n = self.data.len();
+        let bits = n & 7;
+        if bits == 0 {
+            n
+        } else {
+            n + (8 - bits)
+        }
     }
 }
 
@@ -59,26 +82,36 @@ pub enum Op {
     RETURN,    // Return from the routine
 }
 
+impl Opcode {
+    pub fn as_vec(self) -> Vec<u8> {
+        (self as u32).to_le_bytes().to_vec()
+    }
+}
+
 impl Op {
     pub fn as_vec(&self) -> Vec<u8> {
         match self {
-            Self::NOP => vec![Opcode::NOP as u8, 0, 0, 0, 0],
-            Self::PUSH_UNIT => vec![Opcode::PUSH_UNIT as u8, 0, 0, 0, 0],
-            Self::PUSH_BOOL(b) => vec![Opcode::PUSH_BOOL as u8, *b as u8, 0, 0, 0],
-            Self::PUSH_U8(u) => vec![Opcode::PUSH_U8 as u8, *u, 0, 0, 0],
+            Self::NOP => Self::just(Opcode::NOP),
+            Self::PUSH_UNIT => Self::just(Opcode::PUSH_UNIT),
+            Self::PUSH_BOOL(b) => Self::join(Opcode::PUSH_BOOL, &[*b as u8, 0, 0, 0]),
+            Self::PUSH_U8(u) => Self::join(Opcode::PUSH_U8, &[*u, 0, 0, 0]),
             Self::PUSH_I32(i) => Self::join(Opcode::PUSH_I32, &i.to_le_bytes()),
             Self::PUSH_FN(addr) => Self::join(Opcode::PUSH_FN, &addr.to_le_bytes()),
             Self::PUSH_CMD(addr) => Self::join(Opcode::PUSH_CMD, &addr.to_le_bytes()),
             Self::DROP(n) => Self::join(Opcode::DROP, &n.to_le_bytes()),
             Self::FEED(argc) => Self::join(Opcode::FEED, &argc.to_le_bytes()),
-            Self::CALL => vec![Opcode::CALL as u8, 0, 0, 0, 0],
-            Self::BRANCH => vec![Opcode::BRANCH as u8, 0, 0, 0, 0],
-            Self::RETURN => vec![Opcode::RETURN as u8, 0, 0, 0, 0],
+            Self::CALL => Self::just(Opcode::CALL),
+            Self::BRANCH => Self::just(Opcode::BRANCH),
+            Self::RETURN => Self::just(Opcode::RETURN),
         }
     }
 
+    fn just(opcode: Opcode) -> Vec<u8> {
+        Self::join(opcode, &0_i32.to_le_bytes())
+    }
+
     fn join(opcode: Opcode, slice: &[u8]) -> Vec<u8> {
-        let mut v = vec![opcode as u8];
+        let mut v = opcode.as_vec();
         v.extend_from_slice(slice);
         v
     }
