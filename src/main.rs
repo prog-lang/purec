@@ -1,10 +1,19 @@
 mod asm;
 
-use asm::Op::*;
-use std::io::{stdout, Write};
+use asm::{Op::*, Program};
+use std::io::{self, stdout, Write};
 
-fn main() {
-    stdout().write_all(PUSH_I32(42).as_vec().as_slice());
+fn main() -> Result<(), io::Error> {
+    let std_print = 5;
+    let program = Program::new(vec![
+        NOP,
+        PUSH_FN(std_print),
+        PUSH_I32(42),
+        FEED(1),
+        CALL,
+        RETURN,
+    ]);
+    stdout().write_all(program.as_vec().as_slice())
 }
 
 // fn read_src_from_stdin() -> String {

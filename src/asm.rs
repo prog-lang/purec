@@ -1,3 +1,26 @@
+pub struct Program {
+    data: Vec<u8>,
+    code: Vec<Op>,
+}
+
+impl Program {
+    pub fn new(code: Vec<Op>) -> Self {
+        Self {
+            data: vec![],
+            code: code,
+        }
+    }
+
+    pub fn as_vec(&self) -> Vec<u8> {
+        let mut v = (self.data.len() as i32).to_le_bytes().to_vec();
+        v.extend_from_slice(self.data.as_slice());
+        for op in self.code.iter() {
+            v.extend_from_slice(op.as_vec().as_slice());
+        }
+        v
+    }
+}
+
 enum Opcode {
     NOP, // DO NOTHING
 
@@ -37,12 +60,12 @@ pub enum Op {
 }
 
 impl Op {
-    pub fn as_vec(self) -> Vec<u8> {
+    pub fn as_vec(&self) -> Vec<u8> {
         match self {
             Self::NOP => vec![Opcode::NOP as u8, 0, 0, 0, 0],
             Self::PUSH_UNIT => vec![Opcode::PUSH_UNIT as u8, 0, 0, 0, 0],
-            Self::PUSH_BOOL(b) => vec![Opcode::PUSH_BOOL as u8, b as u8, 0, 0, 0],
-            Self::PUSH_U8(u) => vec![Opcode::PUSH_U8 as u8, u, 0, 0, 0],
+            Self::PUSH_BOOL(b) => vec![Opcode::PUSH_BOOL as u8, *b as u8, 0, 0, 0],
+            Self::PUSH_U8(u) => vec![Opcode::PUSH_U8 as u8, *u, 0, 0, 0],
             Self::PUSH_I32(i) => Self::join(Opcode::PUSH_I32, &i.to_le_bytes()),
             Self::PUSH_FN(addr) => Self::join(Opcode::PUSH_FN, &addr.to_le_bytes()),
             Self::PUSH_CMD(addr) => Self::join(Opcode::PUSH_CMD, &addr.to_le_bytes()),
