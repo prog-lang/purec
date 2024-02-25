@@ -32,9 +32,9 @@ op = { "<"
      | "="
      }
 
-int = @{ "0" | ("-"? ~ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) }
 id = @{ (name ~ ".")+ ~ name }
 name = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
+int = @{ "0" | ("-"? ~ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) }
 
 COMMENT = _{ "{-" ~ (!"-}" ~ ANY)* ~ "-}" }
 WHITESPACE = _{ " " | "\t" | NEWLINE }

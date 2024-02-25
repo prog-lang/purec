@@ -6,20 +6,20 @@ file =
 
 declaration = { id ~ ":=" ~ expr ~ ";" }
 
-expr = _{ func | call | unit }
+expr = _{ func | call | literal }
 
 func = { param+ ~ expr }
 param = { name ~ "->" }
 
-call = { fn ~ unit+ }
-fn = _{ id | name | brack }
+call = { f ~ literal+ }
+f = _{ id | name | brack }
 
-unit = _{ brack | id | name | int }
+literal = _{ brack | id | name | int }
 brack = _{ "(" ~ expr ~ ")" }
 
-int = @{ "0" | ("-"? ~ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) }
 id = @{ (name ~ ".")+ ~ name }
 name = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
+int = @{ "0" | ("-"? ~ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) }
 
 COMMENT = _{ "{-" ~ (!"-}" ~ ANY)* ~ "-}" }
 WHITESPACE = _{ " " | "\t" | NEWLINE }
