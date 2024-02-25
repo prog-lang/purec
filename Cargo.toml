@@ -6,8 +6,8 @@ authors = ["Viktor A. Rozenko Voitenko <sharp.vik@gmail.com>"]
 description = "Pure Compiler"
 license = "MIT"
 readme = "README.md"
-documentation = "https://github.com/prog-lang/pure-asm#readme"
-homepage = "https://github.com/prog-lang/pure-asm#readme"
+documentation = "https://github.com/prog-lang/purec#readme"
+homepage = "https://github.com/prog-lang/purec#readme"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
