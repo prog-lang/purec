@@ -1,23 +1,26 @@
+#[macro_use]
+extern crate pest_derive;
+extern crate pest;
+
 mod asm;
+mod parser;
 
-use asm::{Op::*, Program};
-use std::io::{self, stdout, Write};
+use clap::Parser as Clap;
+use parser::{PureParser, Rule};
+use pest::Parser;
 
-fn main() -> Result<(), io::Error> {
-    let data = vec![1, 2, 3, 4];
-
-    let std_print = 5;
-    let code = vec![NOP, PUSH_FN(std_print), PUSH_I32(58), FEED(1), CALL, RETURN];
-
-    let program = Program::from(data, code);
-
-    stdout().write_all(program.as_vec().as_slice())
+#[derive(Clap, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Path to source code file
+    source: String,
 }
 
-// fn read_src_from_stdin() -> String {
-//     let mut buffer = String::new();
-//     stdin()
-//         .read_to_string(&mut buffer)
-//         .expect("Failed to read from stdin");
-//     buffer
-// }
+fn main() {
+    let args = Args::parse();
+    let src = std::fs::read_to_string(args.source).expect("failed to read source file");
+    let parsed = PureParser::parse(Rule::file, &src);
+    if let Err(syntax_error) = parsed {
+        eprintln!("Syntax error:\n{}", syntax_error);
+    }
+}
