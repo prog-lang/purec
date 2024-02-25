@@ -1,21 +1,32 @@
 use crate::{parser, parser::Rule};
 use pest::iterators::{Pair, Pairs};
+use std::collections::HashMap;
 
 #[derive(Default, Debug, PartialEq)]
 pub struct AST {
     declarations: Vec<Declaration>,
+    index: HashMap<String, usize>,
 }
 
 impl TryFrom<Pairs<'_, Rule>> for AST {
     type Error = String;
 
     fn try_from(pairs: Pairs<Rule>) -> Result<Self, Self::Error> {
-        let declarations = pairs
+        let declarations: Vec<Declaration> = pairs
             .into_iter()
             .take_while(parser::is_not_eoi)
             .map(|pair| pair.into_inner().into())
             .collect();
-        Ok(Self { declarations })
+        let index = HashMap::from_iter(
+            declarations
+                .iter()
+                .enumerate()
+                .map(|(i, d)| (d.id.clone(), i)),
+        );
+        Ok(Self {
+            declarations,
+            index,
+        })
     }
 }
 
@@ -52,8 +63,8 @@ enum Expr {
     Int(i32),                          // -42
     Name(String),                      // x
     ID(String),                        // main.example
-    Call(Box<Expr>, Box<Vec<Expr>>),   // f a main.b 42 (std.print 58)
-    Func(Box<Vec<String>>, Box<Expr>), // a -> b -> Expr
+    Call(Box<Self>, Box<Vec<Self>>),   // f a main.b 42 (std.print 58)
+    Func(Box<Vec<String>>, Box<Self>), // a -> b -> Expr
 }
 
 impl Expr {
@@ -73,7 +84,7 @@ impl Expr {
         let mut it = pairs.into_iter();
         let f = it.next().unwrap().into();
         let args = it.map(|pair| pair.into()).collect();
-        Expr::Call(Box::new(f), Box::new(args))
+        Self::Call(Box::new(f), Box::new(args))
     }
 
     pub fn func(pairs: Pairs<Rule>) -> Self {

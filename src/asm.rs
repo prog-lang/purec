@@ -5,10 +5,7 @@ pub struct Program {
 
 impl Program {
     pub fn new(code: Vec<Op>) -> Self {
-        Self {
-            data: vec![],
-            code: code,
-        }
+        Self::from(vec![], code)
     }
 
     pub fn from(data: Vec<u8>, code: Vec<Op>) -> Self {
