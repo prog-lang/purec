@@ -1,18 +1,25 @@
 file = 
  _{ SOI
-  ~ insrtuction*
+  ~ declaration*
   ~ EOI
   }
 
-insrtuction = { label? ~ opcode ~ operand? ~ ";" }
+declaration = { id ~ ":=" ~ expr ~ ";" }
 
-label = { id ~ ":" }
-opcode = @{ ASCII_ALPHA_UPPER ~ ("_" | ASCII_ALPHA_UPPER | ASCII_DIGIT)+ }
-operand = { int | id }
+expr = _{ func | call | unit }
+
+func = { param+ ~ expr }
+param = { name ~ "->" }
+
+call = { fn ~ unit+ }
+fn = _{ id | name | brack }
+
+unit = _{ brack | id | name | int }
+brack = _{ "(" ~ expr ~ ")" }
 
 int = @{ "0" | ("-"? ~ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) }
 id = @{ (name ~ ".")+ ~ name }
 name = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
 
-COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+COMMENT = _{ "{-" ~ (!"-}" ~ ANY)* ~ "-}" }
 WHITESPACE = _{ " " | "\t" | NEWLINE }

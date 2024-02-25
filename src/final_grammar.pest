@@ -1,0 +1,40 @@
+file = 
+ _{ SOI
+  ~ declaration*
+  ~ EOI
+  }
+
+declaration = { id ~ ":=" ~ expr ~ ";" }
+
+expr = { binop | expr1 }
+expr1 = _{ call | unit }
+call = { caller ~ unit+ }
+caller = _{ id | brack }
+unit = _{ brack | id | int }
+brack = _{ "(" ~ expr ~ ")" }
+binop = { expr1 ~ ops ~ expr }
+ops = @{ op+ }
+op = { "<"
+     | ">"
+     | "*"
+     | "/"
+     | "|"
+     | "!"
+     | "@"
+     | "#"
+     | "$"
+     | "%"
+     | "^"
+     | "&"
+     | "*"
+     | "-"
+     | "+"
+     | "="
+     }
+
+int = @{ "0" | ("-"? ~ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) }
+id = @{ (name ~ ".")+ ~ name }
+name = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
+
+COMMENT = _{ "{-" ~ (!"-}" ~ ANY)* ~ "-}" }
+WHITESPACE = _{ " " | "\t" | NEWLINE }

@@ -1,0 +1,1 @@
+main.main = std.print 42;
