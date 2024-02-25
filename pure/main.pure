@@ -1,9 +1,4 @@
 main.main := 42;
-
-main.a := hello;
-
-main.b := main.a;
-
-main.c := main.a 42 (main.b hello);
-
-main.f := a -> b -> c -> a 42 (b hello) c;
+main.p := std.print 42;
+main.fst := a -> b -> a;
+main.snd := a -> b -> b;

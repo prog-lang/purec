@@ -51,6 +51,7 @@ enum Opcode {
     PUSH_I32,  // Push i32 onto the stack
     PUSH_FN,   // Push fn onto the stack (std)
     PUSH_CMD,  // Push cmd onto the stack
+    PUSH_ARG,  // Push cmd argument (by its index) onto the stack
     DROP,      // Drop top value off of the stack
 
     /* Program flow */
@@ -70,6 +71,7 @@ pub enum Op {
     PUSH_I32(i32),   // Push i32 onto the stack
     PUSH_FN(i32),    // Push fn onto the stack (std)
     PUSH_CMD(i32),   // Push cmd onto the stack
+    PUSH_ARG(i32),   // Push cmd argument (by its index) onto the stack
     DROP(i32),       // Drop top value off of the stack
 
     /* Program flow */
@@ -95,6 +97,7 @@ impl Op {
             Self::PUSH_I32(i) => Self::join(Opcode::PUSH_I32, &i.to_le_bytes()),
             Self::PUSH_FN(addr) => Self::join(Opcode::PUSH_FN, &addr.to_le_bytes()),
             Self::PUSH_CMD(addr) => Self::join(Opcode::PUSH_CMD, &addr.to_le_bytes()),
+            Self::PUSH_ARG(index) => Self::join(Opcode::PUSH_ARG, &index.to_le_bytes()),
             Self::DROP(n) => Self::join(Opcode::DROP, &n.to_le_bytes()),
             Self::FEED(argc) => Self::join(Opcode::FEED, &argc.to_le_bytes()),
             Self::CALL => Self::just(Opcode::CALL),
