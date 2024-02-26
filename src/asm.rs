@@ -56,27 +56,26 @@ enum Opcode {
 
     /* Program flow */
     FEED,   // FEED N top values into the function beneath
-    CALL,   // CALL top function off of the stack
     BRANCH, // BRANCH left or right based on a condition
     RETURN, // Return from the routine
 }
 
 pub enum Op {
-    NOP, // DO NOTHING
+    NOP,       // DO NOTHING
+    ARGC(u32), // Specify argument count for Cmd
 
     /* Stack manipulation */
     PUSH_UNIT,       // Push unit onto the stack
     PUSH_BOOL(bool), // Push bool onto the stack
     PUSH_U8(u8),     // Push u8 onto the stack
     PUSH_I32(i32),   // Push i32 onto the stack
-    PUSH_FN(i32),    // Push fn onto the stack (std)
-    PUSH_CMD(i32),   // Push cmd onto the stack
-    PUSH_ARG(i32),   // Push cmd argument (by its index) onto the stack
-    DROP(i32),       // Drop top value off of the stack
+    PUSH_FN(u32),    // Push fn onto the stack (std)
+    PUSH_CMD(u32),   // Push cmd onto the stack
+    PUSH_ARG(u32),   // Push cmd argument (by its index) onto the stack
+    DROP(u32),       // Drop top value off of the stack
 
     /* Program flow */
-    FEED(i32), // FEED N top values into the function beneath
-    CALL,      // CALL top function off of the stack
+    FEED(u32), // FEED N top values into the function beneath
     BRANCH,    // BRANCH left or right based on a condition
     RETURN,    // Return from the routine
 }
@@ -91,6 +90,7 @@ impl Op {
     pub fn as_vec(&self) -> Vec<u8> {
         match self {
             Self::NOP => Self::just(Opcode::NOP),
+            Self::ARGC(argc) => Self::join(Opcode::NOP, &argc.to_le_bytes()),
             Self::PUSH_UNIT => Self::just(Opcode::PUSH_UNIT),
             Self::PUSH_BOOL(b) => Self::join(Opcode::PUSH_BOOL, &[*b as u8, 0, 0, 0]),
             Self::PUSH_U8(u) => Self::join(Opcode::PUSH_U8, &[*u, 0, 0, 0]),
@@ -100,7 +100,6 @@ impl Op {
             Self::PUSH_ARG(index) => Self::join(Opcode::PUSH_ARG, &index.to_le_bytes()),
             Self::DROP(n) => Self::join(Opcode::DROP, &n.to_le_bytes()),
             Self::FEED(argc) => Self::join(Opcode::FEED, &argc.to_le_bytes()),
-            Self::CALL => Self::just(Opcode::CALL),
             Self::BRANCH => Self::just(Opcode::BRANCH),
             Self::RETURN => Self::just(Opcode::RETURN),
         }
