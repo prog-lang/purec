@@ -1,11 +1,38 @@
+use crate::stdlib::{self};
+use crate::valid::Valid;
 use crate::{parser, parser::Rule};
 use pest::iterators::{Pair, Pairs};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Default, Debug, PartialEq)]
 pub struct AST {
     declarations: Vec<Declaration>,
     index: HashMap<String, usize>,
+}
+
+impl AST {
+    fn get_entrypoint_index(&self) -> Option<usize> {
+        self.index.get("main.main").map(|i| *i)
+    }
+
+    fn get_ref_ids(&self) -> HashSet<String> {
+        self.declarations
+            .iter()
+            .map(|d| d.expr.get_ids())
+            .flatten()
+            .collect()
+    }
+
+    fn get_known_ids(&self) -> HashSet<String> {
+        self.index.keys().cloned().collect()
+    }
+
+    fn get_undef_ids(&self) -> Vec<String> {
+        self.get_ref_ids()
+            .difference(&self.get_known_ids())
+            .cloned()
+            .collect()
+    }
 }
 
 impl TryFrom<Pairs<'_, Rule>> for AST {
@@ -17,16 +44,35 @@ impl TryFrom<Pairs<'_, Rule>> for AST {
             .take_while(parser::is_not_eoi)
             .map(|pair| pair.into_inner().into())
             .collect();
-        let index = HashMap::from_iter(
-            declarations
-                .iter()
-                .enumerate()
-                .map(|(i, d)| (d.id.clone(), i)),
-        );
-        Ok(Self {
+
+        let index = stdlib::index()
+            .into_iter()
+            .chain(
+                declarations
+                    .iter()
+                    .enumerate()
+                    .map(|(i, d)| (d.id.clone(), i)),
+            )
+            .collect();
+
+        Self {
             declarations,
             index,
-        })
+        }
+        .valid()
+    }
+}
+
+impl Valid for AST {
+    type Error = String;
+
+    fn validate(&self) -> Result<(), Self::Error> {
+        let diff = self.get_undef_ids();
+        if diff.is_empty() {
+            Ok(())
+        } else {
+            Err(format!("Unknown references found: {}", diff.join(", ")))
+        }
     }
 }
 
@@ -68,6 +114,19 @@ enum Expr {
 }
 
 impl Expr {
+    pub fn get_ids(&self) -> HashSet<String> {
+        match self {
+            Self::ID(id) => HashSet::from([id.clone()]),
+            Self::Call(f, args) => f
+                .get_ids()
+                .into_iter()
+                .chain(args.iter().map(|arg| arg.get_ids()).flatten())
+                .collect(),
+            Self::Func(_, expr) => expr.get_ids(),
+            _ => HashSet::new(),
+        }
+    }
+
     pub fn int(pair: Pair<Rule>) -> Self {
         Self::Int(pair.as_str().parse().unwrap())
     }

@@ -15,3 +15,4 @@ homepage = "https://github.com/prog-lang/purec#readme"
 clap = { version = "4.5.1", features = ["derive"] }
 pest = "2.7.7"
 pest_derive = "2.7.7"
+strum = { version = "0.26", features = ["derive"] }

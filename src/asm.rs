@@ -1,3 +1,5 @@
+use crate::ast::AST;
+
 pub struct Program {
     data: Vec<u8>,
     code: Vec<Op>,

@@ -2,4 +2,8 @@ main.main := std.add 1 2;
 main.p := std.print 42;
 main.fst := a -> b -> a;
 main.snd := a -> b -> b;
-main.true := main.fst;
+
+main.true := main.fsta;
+main.true := main.fstb;
+main.true := main.fstc;
+main.true := main.fstar;
