@@ -1,10 +1,10 @@
-use crate::stdlib::{self};
+use crate::stdlib;
 use crate::valid::Valid;
 use crate::{parser, parser::Rule};
 use pest::iterators::{Pair, Pairs};
 use std::collections::{HashMap, HashSet};
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct AST {
     declarations: Vec<Declaration>,
     index: HashMap<String, usize>,
@@ -76,19 +76,28 @@ impl Valid for AST {
     }
 }
 
-impl From<Pairs<'_, Rule>> for Declaration {
-    fn from(pairs: Pairs<Rule>) -> Self {
-        let mut it = pairs.into_iter();
-        let id = Expr::string(it.next().unwrap());
-        let expr = it.next().unwrap().into();
-        Self { id, expr }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 struct Declaration {
     id: String,
     expr: Expr,
+}
+
+impl From<Pairs<'_, Rule>> for Declaration {
+    fn from(pairs: Pairs<Rule>) -> Self {
+        let mut it = pairs.into_iter();
+        let id = Expr::string(it.next().unwrap());
+        let expr = Expr::from(it.next().unwrap()).to_function();
+        Self { id, expr }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+enum Expr {
+    Int(i32),                          // -42
+    Name(String),                      // x
+    ID(String),                        // main.example
+    Call(Box<Self>, Box<Vec<Self>>),   // f a main.b 42 (std.print 58)
+    Func(Box<Vec<String>>, Box<Self>), // a -> b -> Expr
 }
 
 impl From<Pair<'_, Rule>> for Expr {
@@ -104,17 +113,15 @@ impl From<Pair<'_, Rule>> for Expr {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
-enum Expr {
-    Int(i32),                          // -42
-    Name(String),                      // x
-    ID(String),                        // main.example
-    Call(Box<Self>, Box<Vec<Self>>),   // f a main.b 42 (std.print 58)
-    Func(Box<Vec<String>>, Box<Self>), // a -> b -> Expr
-}
-
 impl Expr {
-    pub fn get_ids(&self) -> HashSet<String> {
+    fn to_function(self) -> Self {
+        match self {
+            Self::Func(params, expr) => Self::Func(params, expr),
+            other => Self::Func(Box::new(vec![]), Box::new(other)),
+        }
+    }
+
+    fn get_ids(&self) -> HashSet<String> {
         match self {
             Self::ID(id) => HashSet::from([id.clone()]),
             Self::Call(f, args) => f

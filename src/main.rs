@@ -9,14 +9,12 @@ mod parser;
 mod stdlib;
 mod valid;
 
-use asm::Program;
 use ast::AST;
 use clap::Parser as Clap;
 use parser::{PureParser, Rule};
 use pest::Parser;
 use std::fs;
-use std::io::{self, Write};
-use valid::Valid;
+use std::io::{self};
 
 #[derive(Clap, Debug)]
 #[command(version, about, long_about = None)]
