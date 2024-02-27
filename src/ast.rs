@@ -6,33 +6,8 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, PartialEq)]
 pub struct AST {
-    declarations: Vec<Declaration>,
+    pub declarations: Vec<Declaration>,
     index: HashMap<String, usize>,
-}
-
-impl AST {
-    fn get_entrypoint_index(&self) -> Option<usize> {
-        self.index.get("main.main").map(|i| *i)
-    }
-
-    fn get_ref_ids(&self) -> HashSet<String> {
-        self.declarations
-            .iter()
-            .map(|d| d.expr.get_ids())
-            .flatten()
-            .collect()
-    }
-
-    fn get_known_ids(&self) -> HashSet<String> {
-        self.index.keys().cloned().collect()
-    }
-
-    fn get_undef_ids(&self) -> Vec<String> {
-        self.get_ref_ids()
-            .difference(&self.get_known_ids())
-            .cloned()
-            .collect()
-    }
 }
 
 impl TryFrom<Pairs<'_, Rule>> for AST {
@@ -76,23 +51,56 @@ impl Valid for AST {
     }
 }
 
-#[derive(Debug, PartialEq)]
-struct Declaration {
-    id: String,
-    expr: Expr,
+impl AST {
+    pub fn get_declaration(&self, id: &String) -> Declaration {
+        self.declarations[self.get_id(id)].clone()
+    }
+
+    pub fn get_id(&self, id: &String) -> usize {
+        *self.index.get(id).unwrap()
+    }
+
+    fn get_entrypoint_index(&self) -> Option<usize> {
+        self.index.get("main.main").map(|i| *i)
+    }
+
+    fn get_ref_ids(&self) -> HashSet<String> {
+        self.declarations
+            .iter()
+            .map(|d| d.expr.get_ids())
+            .flatten()
+            .collect()
+    }
+
+    fn get_known_ids(&self) -> HashSet<String> {
+        self.index.keys().cloned().collect()
+    }
+
+    fn get_undef_ids(&self) -> Vec<String> {
+        self.get_ref_ids()
+            .difference(&self.get_known_ids())
+            .cloned()
+            .collect()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Declaration {
+    pub id: String,
+    pub expr: Expr,
 }
 
 impl From<Pairs<'_, Rule>> for Declaration {
     fn from(pairs: Pairs<Rule>) -> Self {
         let mut it = pairs.into_iter();
         let id = Expr::string(it.next().unwrap());
-        let expr = Expr::from(it.next().unwrap()).to_function();
+        let expr = it.next().unwrap().into();
         Self { id, expr }
     }
 }
 
 #[derive(Debug, PartialEq, Clone)]
-enum Expr {
+pub enum Expr {
     Int(i32),                          // -42
     Name(String),                      // x
     ID(String),                        // main.example
@@ -114,7 +122,7 @@ impl From<Pair<'_, Rule>> for Expr {
 }
 
 impl Expr {
-    fn to_function(self) -> Self {
+    fn to_func(self) -> Self {
         match self {
             Self::Func(params, expr) => Self::Func(params, expr),
             other => Self::Func(Box::new(vec![]), Box::new(other)),

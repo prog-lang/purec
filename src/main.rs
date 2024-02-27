@@ -5,16 +5,18 @@ extern crate strum;
 
 mod asm;
 mod ast;
+mod def;
 mod parser;
 mod stdlib;
 mod valid;
 
 use ast::AST;
 use clap::Parser as Clap;
+use def::Program;
 use parser::{PureParser, Rule};
 use pest::Parser;
 use std::fs;
-use std::io::{self};
+use std::io::{self, Write};
 
 #[derive(Clap, Debug)]
 #[command(version, about, long_about = None)]
@@ -39,16 +41,10 @@ fn main() -> Result<(), io::Error> {
         return Ok(());
     }
 
-    println!("{:#?}", ast.unwrap());
+    let program: Program = ast.unwrap().into();
+    println!("{:#?}", program);
     Ok(())
-
-    // let program: Result<Program, String> = ast.unwrap().try_into();
-    // if let Err(code_gen_error) = program {
-    //     eprintln!("Code generation error: {}", code_gen_error);
-    //     return Ok(());
-    // }
-
     // fs::File::create("main.pure.exe")
     //     .expect("Failed to create executable file")
-    //     .write_all(program.unwrap().as_vec().as_slice())
+    //     .write_all(program.as_vec().as_slice())
 }

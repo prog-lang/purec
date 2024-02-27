@@ -6,12 +6,24 @@ pub struct Program {
     code: Vec<Op>,
 }
 
+// impl From<AST> for Program {
+//     fn from(ast: AST) -> Self {
+//         let code = ast
+//             .declarations
+//             .iter()
+//             .map(|decl| Definition::from(&ast, &decl.expr).code)
+//             .flatten()
+//             .collect();
+//         Self::from(code)
+//     }
+// }
+
 impl Program {
-    pub fn new(code: Vec<Op>) -> Self {
-        Self::from(vec![], code)
+    pub fn from(code: Vec<Op>) -> Self {
+        Self::new(vec![], code)
     }
 
-    pub fn from(data: Vec<u8>, code: Vec<Op>) -> Self {
+    pub fn new(data: Vec<u8>, code: Vec<Op>) -> Self {
         Self { data, code }
     }
 
