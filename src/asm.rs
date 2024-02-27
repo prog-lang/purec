@@ -16,7 +16,7 @@ impl From<def::Program> for Program {
             .into_iter()
             .map(|def| def.code.into_iter())
             .flatten()
-            .map(|op| Op::map(&program, &op))
+            .map(|op| Op::map(&program, op))
             .collect();
         Self::from(code)
     }
@@ -106,19 +106,19 @@ pub enum Op {
 }
 
 impl Op {
-    pub fn map(program: &def::Program, op: &def::Op) -> Op {
+    pub fn map(program: &def::Program, op: def::Op) -> Op {
         match op {
             def::Op::NOP => Op::NOP,
-            def::Op::ARGC(argc) => Op::ARGC(*argc),
+            def::Op::ARGC(argc) => Op::ARGC(argc),
             def::Op::PUSH_UNIT => Op::PUSH_UNIT,
-            def::Op::PUSH_BOOL(b) => Op::PUSH_BOOL(*b),
-            def::Op::PUSH_U8(u) => Op::PUSH_U8(*u),
-            def::Op::PUSH_I32(i) => Op::PUSH_I32(*i),
-            def::Op::PUSH_FN(id) => Op::PUSH_FN(program.get_id(id) as u32),
-            def::Op::PUSH_CMD(id) => Op::PUSH_CMD(program.get_id(id) as u32 + 8), // +8 account for .data
-            def::Op::PUSH_ARG(index) => Op::PUSH_ARG(*index),
-            def::Op::DROP(n) => Op::DROP(*n),
-            def::Op::FEED(n) => Op::FEED(*n),
+            def::Op::PUSH_BOOL(b) => Op::PUSH_BOOL(b),
+            def::Op::PUSH_U8(u) => Op::PUSH_U8(u),
+            def::Op::PUSH_I32(i) => Op::PUSH_I32(i),
+            def::Op::PUSH_FN(id) => Op::PUSH_FN(program.get_id(&id) as u32),
+            def::Op::PUSH_CMD(id) => Op::PUSH_CMD(program.get_id(&id) as u32),
+            def::Op::PUSH_ARG(index) => Op::PUSH_ARG(index),
+            def::Op::DROP(n) => Op::DROP(n),
+            def::Op::FEED(n) => Op::FEED(n),
             def::Op::BRANCH => Op::BRANCH,
             def::Op::RETURN => Op::RETURN,
         }

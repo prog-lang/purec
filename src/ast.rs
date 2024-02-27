@@ -122,13 +122,6 @@ impl From<Pair<'_, Rule>> for Expr {
 }
 
 impl Expr {
-    fn to_func(self) -> Self {
-        match self {
-            Self::Func(params, expr) => Self::Func(params, expr),
-            other => Self::Func(Box::new(vec![]), Box::new(other)),
-        }
-    }
-
     fn get_ids(&self) -> HashSet<String> {
         match self {
             Self::ID(id) => HashSet::from([id.clone()]),

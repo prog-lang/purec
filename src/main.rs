@@ -14,14 +14,18 @@ use ast::AST;
 use clap::Parser as Clap;
 use parser::{PureParser, Rule};
 use pest::Parser;
-use std::fs;
 use std::io::{self, Write};
+use std::{fs, process};
 
 #[derive(Clap, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
     /// Path to source code file
     source: String,
+
+    /// Path to output file
+    #[arg(short, long, default_value_t = String::from("main.pure.exe"))]
+    output: String,
 }
 
 fn main() -> Result<(), io::Error> {
@@ -31,13 +35,13 @@ fn main() -> Result<(), io::Error> {
     let parsed = PureParser::parse(Rule::file, &src);
     if let Err(syntax_error) = parsed {
         eprintln!("Syntax error:\n{}", syntax_error);
-        return Ok(());
+        process::exit(1);
     }
 
     let ast: Result<AST, String> = parsed.unwrap().try_into();
     if let Err(semantic_error) = ast {
         eprintln!("Semantic error:\n{}", semantic_error);
-        return Ok(());
+        process::exit(1);
     }
 
     let program: asm::Program = def::Program::from(ast.unwrap()).into();
