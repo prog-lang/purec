@@ -12,7 +12,6 @@ mod valid;
 
 use ast::AST;
 use clap::Parser as Clap;
-use def::Program;
 use parser::{PureParser, Rule};
 use pest::Parser;
 use std::fs;
@@ -41,10 +40,8 @@ fn main() -> Result<(), io::Error> {
         return Ok(());
     }
 
-    let program: Program = ast.unwrap().into();
-    println!("{:#?}", program);
-    Ok(())
-    // fs::File::create("main.pure.exe")
-    //     .expect("Failed to create executable file")
-    //     .write_all(program.as_vec().as_slice())
+    let program: asm::Program = def::Program::from(ast.unwrap()).into();
+    fs::File::create("main.pure.exe")
+        .expect("Failed to create executable file")
+        .write_all(program.as_vec().as_slice())
 }

@@ -1,22 +1,26 @@
 #![allow(dead_code)]
 #![allow(non_camel_case_types)]
 
+use crate::def;
+
 pub struct Program {
     data: Vec<u8>,
     code: Vec<Op>,
 }
 
-// impl From<AST> for Program {
-//     fn from(ast: AST) -> Self {
-//         let code = ast
-//             .declarations
-//             .iter()
-//             .map(|decl| Definition::from(&ast, &decl.expr).code)
-//             .flatten()
-//             .collect();
-//         Self::from(code)
-//     }
-// }
+impl From<def::Program> for Program {
+    fn from(program: def::Program) -> Self {
+        let code = program
+            .definitions
+            .clone()
+            .into_iter()
+            .map(|def| def.code.into_iter())
+            .flatten()
+            .map(|op| Op::map(&program, &op))
+            .collect();
+        Self::from(code)
+    }
+}
 
 impl Program {
     pub fn from(code: Vec<Op>) -> Self {
@@ -75,6 +79,12 @@ enum Opcode {
     RETURN, // Return from the routine
 }
 
+impl Opcode {
+    pub fn as_vec(self) -> Vec<u8> {
+        (self as u32).to_le_bytes().to_vec()
+    }
+}
+
 pub enum Op {
     NOP,       // DO NOTHING
     ARGC(u32), // Specify argument count for Cmd
@@ -95,13 +105,25 @@ pub enum Op {
     RETURN,    // Return from the routine
 }
 
-impl Opcode {
-    pub fn as_vec(self) -> Vec<u8> {
-        (self as u32).to_le_bytes().to_vec()
-    }
-}
-
 impl Op {
+    pub fn map(program: &def::Program, op: &def::Op) -> Op {
+        match op {
+            def::Op::NOP => Op::NOP,
+            def::Op::ARGC(argc) => Op::ARGC(*argc),
+            def::Op::PUSH_UNIT => Op::PUSH_UNIT,
+            def::Op::PUSH_BOOL(b) => Op::PUSH_BOOL(*b),
+            def::Op::PUSH_U8(u) => Op::PUSH_U8(*u),
+            def::Op::PUSH_I32(i) => Op::PUSH_I32(*i),
+            def::Op::PUSH_FN(id) => Op::PUSH_FN(program.get_id(id) as u32),
+            def::Op::PUSH_CMD(id) => Op::PUSH_CMD(program.get_id(id) as u32 + 8), // +8 account for .data
+            def::Op::PUSH_ARG(index) => Op::PUSH_ARG(*index),
+            def::Op::DROP(n) => Op::DROP(*n),
+            def::Op::FEED(n) => Op::FEED(*n),
+            def::Op::BRANCH => Op::BRANCH,
+            def::Op::RETURN => Op::RETURN,
+        }
+    }
+
     pub fn as_vec(&self) -> Vec<u8> {
         match self {
             Self::NOP => Self::just(Opcode::NOP),

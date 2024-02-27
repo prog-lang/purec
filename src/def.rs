@@ -7,18 +7,18 @@ use crate::{
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
-    definitions: Vec<Definition>,
+    pub definitions: Vec<Definition>,
     index: HashMap<String, usize>,
 }
 
-#[derive(Debug, PartialEq)]
-struct Definition {
+#[derive(Clone, Debug, PartialEq)]
+pub struct Definition {
     id: String,
-    code: Vec<Op>,
+    pub code: Vec<Op>,
 }
 
-#[derive(Debug, PartialEq)]
-enum Op {
+#[derive(Clone, Debug, PartialEq)]
+pub enum Op {
     NOP,       // DO NOTHING
     ARGC(u32), // Specify argument count for Cmd
 
@@ -59,9 +59,13 @@ impl Program {
         let mut offset = 0;
         for def in self.definitions.iter() {
             self.index.insert(def.id.clone(), offset);
-            offset += def.code.len();
+            offset += def.code.len() * 8;
         }
         self
+    }
+
+    pub fn get_id(&self, id: &String) -> usize {
+        *self.index.get(id).unwrap()
     }
 }
 
