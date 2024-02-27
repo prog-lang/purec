@@ -1,3 +1,3 @@
-main.magic := std.mul 2 40;
+main.magic := a -> std.mul 2 40;
 
-main.main := std.print main.magic;
+main.main := std.print (main.magic 1);

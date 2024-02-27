@@ -22,7 +22,9 @@ impl TryFrom<Pairs<'_, Rule>> for AST {
             .map(|decl| (decl.id.clone(), decl))
             .collect();
 
-        Self { declarations }.valid()
+        Self { declarations }
+            .valid()
+            .map(AST::without_unused_declarations)
     }
 }
 
@@ -56,11 +58,22 @@ impl AST {
         self.declarations.get(id).unwrap().clone()
     }
 
+    fn without_unused_declarations(mut self) -> Self {
+        let declared: HashSet<String> = self.declarations.keys().cloned().collect();
+        let referenced = &self.get_ref_ids();
+        let unused = declared.difference(referenced);
+        for reference in unused {
+            self.declarations.remove(reference);
+        }
+        self
+    }
+
     fn get_ref_ids(&self) -> HashSet<String> {
         self.declarations
             .iter()
             .map(|(_, decl)| decl.expr.get_ids())
             .flatten()
+            .chain(vec![ENTRYPOINT.to_string()].into_iter())
             .collect()
     }
 
