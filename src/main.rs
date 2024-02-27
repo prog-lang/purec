@@ -45,7 +45,7 @@ fn main() -> Result<(), io::Error> {
     }
 
     let program: asm::Program = def::Program::from(ast.unwrap()).into();
-    fs::File::create("main.pure.exe")
+    fs::File::create(args.output)
         .expect("Failed to create executable file")
         .write_all(program.as_vec().as_slice())
 }
