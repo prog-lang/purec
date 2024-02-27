@@ -4,37 +4,25 @@ use crate::{parser, parser::Rule};
 use pest::iterators::{Pair, Pairs};
 use std::collections::{HashMap, HashSet};
 
+const ENTRYPOINT: &str = "main.main";
+
 #[derive(Debug, PartialEq)]
 pub struct AST {
-    pub declarations: Vec<Declaration>,
-    index: HashMap<String, usize>,
+    pub declarations: HashMap<String, Declaration>,
 }
 
 impl TryFrom<Pairs<'_, Rule>> for AST {
     type Error = String;
 
     fn try_from(pairs: Pairs<Rule>) -> Result<Self, Self::Error> {
-        let declarations: Vec<Declaration> = pairs
+        let declarations = pairs
             .into_iter()
             .take_while(parser::is_not_eoi)
-            .map(|pair| pair.into_inner().into())
+            .map(|pair| Declaration::from(pair.into_inner()))
+            .map(|decl| (decl.id.clone(), decl))
             .collect();
 
-        let index = stdlib::index()
-            .into_iter()
-            .chain(
-                declarations
-                    .iter()
-                    .enumerate()
-                    .map(|(i, d)| (d.id.clone(), i)),
-            )
-            .collect();
-
-        Self {
-            declarations,
-            index,
-        }
-        .valid()
+        Self { declarations }.valid()
     }
 }
 
@@ -42,38 +30,46 @@ impl Valid for AST {
     type Error = String;
 
     fn validate(&self) -> Result<(), Self::Error> {
-        let diff = self.get_undef_ids();
-        if diff.is_empty() {
-            Ok(())
-        } else {
-            Err(format!("Unknown references found: {}", diff.join(", ")))
-        }
+        self.check_entrypoint_present()?;
+        self.check_undef_ids()?;
+        Ok(())
     }
 }
 
 impl AST {
+    /// Declarations vector returned by this method is ordered such that the
+    /// entrypoint is returned as the first element. There are no guarantees as
+    /// to the ordering of the remaining declarations.
+    pub fn get_declarations(&self) -> Vec<Declaration> {
+        vec![self.declarations.get(ENTRYPOINT).unwrap()]
+            .into_iter()
+            .chain(
+                self.declarations
+                    .values()
+                    .filter(|decl| decl.id != ENTRYPOINT),
+            )
+            .cloned()
+            .collect()
+    }
+
     pub fn get_declaration(&self, id: &String) -> Declaration {
-        self.declarations[self.get_id(id)].clone()
-    }
-
-    pub fn get_id(&self, id: &String) -> usize {
-        *self.index.get(id).unwrap()
-    }
-
-    fn get_entrypoint_index(&self) -> Option<usize> {
-        self.index.get("main.main").map(|i| *i)
+        self.declarations.get(id).unwrap().clone()
     }
 
     fn get_ref_ids(&self) -> HashSet<String> {
         self.declarations
             .iter()
-            .map(|d| d.expr.get_ids())
+            .map(|(_, decl)| decl.expr.get_ids())
             .flatten()
             .collect()
     }
 
     fn get_known_ids(&self) -> HashSet<String> {
-        self.index.keys().cloned().collect()
+        self.declarations
+            .keys()
+            .chain(stdlib::index().keys())
+            .cloned()
+            .collect()
     }
 
     fn get_undef_ids(&self) -> Vec<String> {
@@ -81,6 +77,22 @@ impl AST {
             .difference(&self.get_known_ids())
             .cloned()
             .collect()
+    }
+
+    fn check_undef_ids(&self) -> Result<(), String> {
+        let diff = self.get_undef_ids();
+        if diff.is_empty() {
+            Ok(())
+        } else {
+            Err(format!("Unknown references found: {}", diff.join(", ")))
+        }
+    }
+
+    fn check_entrypoint_present(&self) -> Result<(), String> {
+        match self.declarations.get(ENTRYPOINT) {
+            None => Err(format!("Missing entrypoint: {}", ENTRYPOINT)),
+            _ => Ok(()),
+        }
     }
 }
 

@@ -14,7 +14,7 @@ pub struct Program {
 impl From<AST> for Program {
     fn from(ast: AST) -> Self {
         let definitions: Vec<Definition> = ast
-            .declarations
+            .get_declarations()
             .iter()
             .map(|decl| Definition::from(&ast, decl))
             .collect();
