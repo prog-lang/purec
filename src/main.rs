@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate pest_derive;
 extern crate pest;
-extern crate strum;
 
 mod asm;
 mod ast;
