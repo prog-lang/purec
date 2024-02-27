@@ -80,9 +80,7 @@ impl Definition {
                 } else {
                     match ast.get_declaration(id).expr {
                         // Treat it as a closure.
-                        Expr::Func(_, _) => {
-                            vec![Op::PUSH_CMD(id.clone())]
-                        }
+                        Expr::Func(_, _) => vec![Op::PUSH_CMD(id.clone())],
                         // Treat it as value by calling it with a Unit argument.
                         _ => vec![Op::PUSH_CMD(id.clone()), Op::PUSH_UNIT, Op::FEED(1)],
                     }
