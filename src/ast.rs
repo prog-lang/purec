@@ -1,9 +1,14 @@
+use crate::stdlib;
+use crate::valid::Valid;
 use crate::{parser, parser::Rule};
 use pest::iterators::{Pair, Pairs};
+use std::collections::{HashMap, HashSet};
 
-#[derive(Default, Debug, PartialEq)]
+const ENTRYPOINT: &str = "main.main";
+
+#[derive(Debug, PartialEq)]
 pub struct AST {
-    declarations: Vec<Declaration>,
+    pub declarations: HashMap<String, Declaration>,
 }
 
 impl TryFrom<Pairs<'_, Rule>> for AST {
@@ -13,10 +18,101 @@ impl TryFrom<Pairs<'_, Rule>> for AST {
         let declarations = pairs
             .into_iter()
             .take_while(parser::is_not_eoi)
-            .map(|pair| pair.into_inner().into())
+            .map(|pair| Declaration::from(pair.into_inner()))
+            .map(|decl| (decl.id.clone(), decl))
             .collect();
-        Ok(Self { declarations })
+
+        Self { declarations }
+            .valid()
+            .map(AST::without_unused_declarations)
     }
+}
+
+impl Valid for AST {
+    type Error = String;
+
+    fn validate(&self) -> Result<(), Self::Error> {
+        self.check_entrypoint_present()?;
+        self.check_undef_ids()?;
+        Ok(())
+    }
+}
+
+impl AST {
+    /// Declarations vector returned by this method is ordered such that the
+    /// entrypoint is returned as the first element. There are no guarantees as
+    /// to the ordering of the remaining declarations.
+    pub fn get_declarations(&self) -> Vec<Declaration> {
+        vec![self.declarations.get(ENTRYPOINT).unwrap()]
+            .into_iter()
+            .chain(
+                self.declarations
+                    .values()
+                    .filter(|decl| decl.id != ENTRYPOINT),
+            )
+            .cloned()
+            .collect()
+    }
+
+    pub fn get_declaration(&self, id: &String) -> Declaration {
+        self.declarations.get(id).unwrap().clone()
+    }
+
+    fn without_unused_declarations(mut self) -> Self {
+        let declared: HashSet<String> = self.declarations.keys().cloned().collect();
+        let referenced = &self.get_ref_ids();
+        let unused = declared.difference(referenced);
+        for reference in unused {
+            self.declarations.remove(reference);
+        }
+        self
+    }
+
+    fn get_ref_ids(&self) -> HashSet<String> {
+        self.declarations
+            .iter()
+            .map(|(_, decl)| decl.expr.get_ids())
+            .flatten()
+            .chain(vec![ENTRYPOINT.to_string()].into_iter())
+            .collect()
+    }
+
+    fn get_known_ids(&self) -> HashSet<String> {
+        self.declarations
+            .keys()
+            .chain(stdlib::index().keys())
+            .cloned()
+            .collect()
+    }
+
+    fn get_undef_ids(&self) -> Vec<String> {
+        self.get_ref_ids()
+            .difference(&self.get_known_ids())
+            .cloned()
+            .collect()
+    }
+
+    fn check_undef_ids(&self) -> Result<(), String> {
+        let diff = self.get_undef_ids();
+        if diff.is_empty() {
+            Ok(())
+        } else {
+            Err(format!("Unknown references found: {}", diff.join(", ")))
+        }
+    }
+
+    fn check_entrypoint_present(&self) -> Result<(), String> {
+        match self.declarations.get(ENTRYPOINT) {
+            None => Err(format!("Missing entrypoint: {}", ENTRYPOINT)),
+            _ => Ok(()),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Declaration {
+    pub id: String,
+    pub expr: Expr,
 }
 
 impl From<Pairs<'_, Rule>> for Declaration {
@@ -28,10 +124,13 @@ impl From<Pairs<'_, Rule>> for Declaration {
     }
 }
 
-#[derive(Debug, PartialEq)]
-struct Declaration {
-    id: String,
-    expr: Expr,
+#[derive(Debug, PartialEq, Clone)]
+pub enum Expr {
+    Int(i32),                          // -42
+    Name(String),                      // x
+    ID(String),                        // main.example
+    Call(Box<Self>, Box<Vec<Self>>),   // f a main.b 42 (std.print 58)
+    Func(Box<Vec<String>>, Box<Self>), // a -> b -> Expr
 }
 
 impl From<Pair<'_, Rule>> for Expr {
@@ -47,16 +146,20 @@ impl From<Pair<'_, Rule>> for Expr {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
-enum Expr {
-    Int(i32),                          // -42
-    Name(String),                      // x
-    ID(String),                        // main.example
-    Call(Box<Expr>, Box<Vec<Expr>>),   // f a main.b 42 (std.print 58)
-    Func(Box<Vec<String>>, Box<Expr>), // a -> b -> Expr
-}
-
 impl Expr {
+    fn get_ids(&self) -> HashSet<String> {
+        match self {
+            Self::ID(id) => HashSet::from([id.clone()]),
+            Self::Call(f, args) => f
+                .get_ids()
+                .into_iter()
+                .chain(args.iter().map(|arg| arg.get_ids()).flatten())
+                .collect(),
+            Self::Func(_, expr) => expr.get_ids(),
+            _ => HashSet::new(),
+        }
+    }
+
     pub fn int(pair: Pair<Rule>) -> Self {
         Self::Int(pair.as_str().parse().unwrap())
     }
@@ -73,7 +176,7 @@ impl Expr {
         let mut it = pairs.into_iter();
         let f = it.next().unwrap().into();
         let args = it.map(|pair| pair.into()).collect();
-        Expr::Call(Box::new(f), Box::new(args))
+        Self::Call(Box::new(f), Box::new(args))
     }
 
     pub fn func(pairs: Pairs<Rule>) -> Self {
