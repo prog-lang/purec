@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate pest_derive;
 extern crate pest;
+extern crate polytype;
 
 mod asm;
 mod ast;
@@ -8,6 +9,7 @@ mod def;
 mod js;
 mod parser;
 mod stdlib;
+mod types;
 mod valid;
 
 use ast::AST;
