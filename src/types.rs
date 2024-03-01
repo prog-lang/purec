@@ -1,71 +1,71 @@
-use crate::ast::Expr;
-use crate::stdlib;
-use polytype::{ptp, tp, Context, Type, UnificationError};
+use im::HashSet;
 
-#[derive(Default)]
-struct Checker {
-    ctx: Context,
+#[derive(Clone)]
+pub struct Scheme {
+    pub guards: HashSet<Binder>,
+    pub body: Type,
 }
 
-impl Checker {
-    fn check(&mut self, expr: Expr, expect: Type) -> Result<(), UnificationError<&'static str>> {
-        match expr {
-            Expr::Int(_) => self.ctx.unify(&expect, &tp!(Int)),
-            Expr::Name(_) => todo!(),
-            Expr::ID(id) => {
-                let got = stdlib::function(&id).unwrap().t.instantiate(&mut self.ctx);
-                self.ctx.unify(&expect, &got)
-            }
-            Expr::Call(f, args) => {
-                let mut tf: Type = args
-                    .iter()
-                    .enumerate()
-                    .map(|(i, _)| Type::Variable(i))
-                    .rev()
-                    .fold(expect, |beta, alpha| Type::arrow(alpha, beta));
-                self.check(*f, tf)?;
-                Ok(())
-            }
-            Expr::Func(_, _) => todo!(),
+#[derive(Debug, Clone, PartialEq)]
+pub enum Type {
+    Unit,
+    Int,
+    Var(Binder),
+    Func(Box<Type>, Box<Type>),
+}
+
+pub type Binder = String;
+
+impl From<Type> for Scheme {
+    fn from(body: Type) -> Self {
+        Self {
+            guards: HashSet::default(),
+            body,
         }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn converter() {
-        let expect = tp!(Result);
-        let t = (0..3)
-            .into_iter()
-            .enumerate()
-            .map(|(i, _)| Type::Variable(i))
-            .rev()
-            .fold(expect, |prev, cur| Type::arrow(cur, prev));
-        println!("{}", t.to_string());
+impl Scheme {
+    pub fn forall(guard: Binder, body: Type) -> Self {
+        Self::new(vec![guard], body)
     }
 
-    #[test]
-    fn it_works() {
-        Checker::default()
-            .check(Expr::Int(42), tp!(Int))
-            .expect("int");
-        Checker::default()
-            .check(
-                Expr::ID("std.add".to_string()),
-                tp!(@arrow[tp!(Int), tp!(Int), tp!(Int)]),
-            )
-            .expect("id");
-        Checker::default()
-            .check(
-                Expr::Call(
-                    Box::new(Expr::ID("std.id".to_string())),
-                    Box::new(vec![Expr::Int(42)]),
-                ),
-                tp!(Int),
-            )
-            .expect("call")
+    pub fn new(guards: Vec<Binder>, body: Type) -> Self {
+        Self {
+            guards: guards.into(),
+            body,
+        }
+    }
+
+    pub fn from(guards: HashSet<Binder>, body: Type) -> Self {
+        Self { guards, body }
+    }
+
+    pub fn map_body<F>(&self, f: F) -> Self
+    where
+        F: Fn(Type) -> Type,
+    {
+        Self::from(self.guards.clone(), f(self.body.clone()))
+    }
+
+    pub fn concrete(body: Type) -> Self {
+        Self::new(vec![], body)
+    }
+}
+
+impl Type {
+    pub fn free_type_vars(&self) -> HashSet<Binder> {
+        match self {
+            Self::Var(binder) => vec![binder.clone()].into(),
+            Self::Func(arg, res) => arg.free_type_vars().union(res.free_type_vars()),
+            _ => HashSet::default(),
+        }
+    }
+
+    pub fn func(params: Vec<Self>, result: Self) -> Self {
+        params
+            .into_iter()
+            .rev()
+            .fold(result, |prev, next| Self::Func(next.into(), prev.into()))
     }
 }

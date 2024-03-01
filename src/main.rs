@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate pest_derive;
+extern crate im_rc as im;
 extern crate pest;
 extern crate polytype;
 
@@ -7,6 +8,7 @@ mod asm;
 mod ast;
 mod def;
 mod js;
+mod infer;
 mod parser;
 mod stdlib;
 mod types;
