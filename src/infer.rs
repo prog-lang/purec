@@ -1,3 +1,21 @@
+//! Module `infer` provides a very valuable utility `pub fn infer`.
+//! It implements the infamous Hindley-Milner type inference algorithm that
+//! operates on `infer::Expr`essions.
+//!
+//! This implementation is a port of
+//! [this Hindley-Milner analyser](https://github.com/kritzcreek/fby19/tree/master)
+//! (originally written in Haskell by
+//! [Christoph Hegemann](https://github.com/kritzcreek))
+//! who was kind enough to record a video presentation/explanation and post it
+//! on [YouTube](https://youtu.be/ytPAlhnAKro?si=psgdXDTzEp3yQP0r).
+//!
+//! Some other useful resources include:
+//!
+//! - https://github.com/lorepozo/polytype-rs
+//! - https://cs.brown.edu/~sk/Publications/Books/ProgLangs/2007-04-26/plai-2007-04-26.pdf
+//! - https://eli.thegreenplace.net/2018/unification/
+//! - https://cs.brown.edu/courses/cs173/2012/book/types.html
+
 use crate::types::*;
 use im::HashMap;
 
