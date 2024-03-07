@@ -13,5 +13,7 @@ homepage = "https://github.com/prog-lang/purec#readme"
 
 [dependencies]
 clap = { version = "4.5.1", features = ["derive"] }
+im-rc = "15.1.0"
 pest = "2.7.7"
 pest_derive = "2.7.7"
+polytype = "7.0.1"

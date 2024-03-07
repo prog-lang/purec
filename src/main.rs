@@ -1,13 +1,17 @@
 #[macro_use]
 extern crate pest_derive;
+extern crate im_rc as im;
 extern crate pest;
+extern crate polytype;
 
 mod asm;
 mod ast;
 mod def;
+mod infer;
 mod js;
 mod parser;
 mod stdlib;
+mod types;
 mod valid;
 
 use ast::AST;
@@ -28,7 +32,7 @@ struct App {
     #[arg(short, long, default_value_t = String::from("main.js"))]
     output: String,
 
-    /// Output architecture (vm | js)
+    /// Output architecture (vm | node)
     #[arg(long, default_value_t = String::from("node"))]
     arch: String,
 }
