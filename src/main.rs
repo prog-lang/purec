@@ -5,6 +5,7 @@ extern crate pest;
 mod asm;
 mod ast;
 mod def;
+mod js;
 mod parser;
 mod stdlib;
 mod valid;
@@ -12,39 +13,90 @@ mod valid;
 use ast::AST;
 use clap::Parser as Clap;
 use parser::{PureParser, Rule};
+use pest::iterators::Pairs;
 use pest::Parser;
 use std::io::{self, Write};
 use std::{fs, process};
 
 #[derive(Clap, Debug)]
 #[command(version, about, long_about = None)]
-struct Args {
+struct App {
     /// Path to source code file
     source: String,
 
     /// Path to output file
     #[arg(short, long, default_value_t = String::from("main.pure.exe"))]
     output: String,
+
+    /// Output architecture (vm | js)
+    #[arg(long, default_value_t = String::from("js"))]
+    arch: String,
+}
+
+impl App {
+    fn run(self) -> Result<(), io::Error> {
+        self.compile(self.read_source()?)
+    }
+
+    fn read_source(&self) -> io::Result<String> {
+        fs::read_to_string(&self.source)
+    }
+
+    fn compile(&self, input: String) -> Result<(), io::Error> {
+        self.generate_executable_code(Self::parse_input(input))
+    }
+
+    fn parse_input(input: String) -> AST {
+        let parsed = PureParser::parse(Rule::file, &input);
+        match parsed {
+            Err(syntax_error) => {
+                exit(format!("Syntax error:\n{}", syntax_error));
+                AST::default()
+            }
+            Ok(pairs) => Self::form_ast(pairs),
+        }
+    }
+
+    fn form_ast(pairs: Pairs<'_, Rule>) -> AST {
+        let attempt: Result<AST, String> = pairs.try_into();
+        match attempt {
+            Err(semantic_error) => {
+                exit(format!("Semantic error:\n{}", semantic_error));
+                AST::default()
+            }
+            Ok(ast) => ast,
+        }
+    }
+
+    fn generate_executable_code(&self, ast: AST) -> Result<(), io::Error> {
+        match self.arch.as_str() {
+            "vm" => {
+                let program: asm::Program = def::Program::from(ast).into();
+                fs::File::create(&self.output)
+                    .expect("Failed to create executable file")
+                    .write_all(program.as_vec().as_slice())
+            }
+            "js" => {
+                let program: js::Program = ast.into();
+                let code: String = program.into();
+                let path = self.source.clone() + ".js";
+                fs::File::create(path)
+                    .expect("Failed to create executable file")
+                    .write_all(code.as_bytes())
+            }
+            unknown_arch => {
+                exit(format!("Unknown arch '{}'", unknown_arch));
+                Ok(())
+            }
+        }
+    }
 }
 
 fn main() -> Result<(), io::Error> {
-    let args = Args::parse();
-    let src = fs::read_to_string(args.source).expect("Failed to read source file");
+    return App::parse().run();
+}
 
-    let parsed = PureParser::parse(Rule::file, &src);
-    if let Err(syntax_error) = parsed {
-        eprintln!("Syntax error:\n{}", syntax_error);
-        process::exit(1);
-    }
-
-    let ast: Result<AST, String> = parsed.unwrap().try_into();
-    if let Err(semantic_error) = ast {
-        eprintln!("Semantic error:\n{}", semantic_error);
-        process::exit(1);
-    }
-
-    let program: asm::Program = def::Program::from(ast.unwrap()).into();
-    fs::File::create(args.output)
-        .expect("Failed to create executable file")
-        .write_all(program.as_vec().as_slice())
+fn exit(message: String) {
+    eprintln!("{}", message);
+    process::exit(1);
 }

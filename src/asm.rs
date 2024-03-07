@@ -129,12 +129,20 @@ impl Op {
             Self::NOP => Self::just(Opcode::NOP),
             Self::ARGC(argc) => Self::join(Opcode::NOP, &argc.to_le_bytes()),
             Self::PUSH_UNIT => Self::just(Opcode::PUSH_UNIT),
-            Self::PUSH_BOOL(b) => Self::join(Opcode::PUSH_BOOL, &[*b as u8, 0, 0, 0]),
+            Self::PUSH_BOOL(b) => {
+                Self::join(Opcode::PUSH_BOOL, &[*b as u8, 0, 0, 0])
+            }
             Self::PUSH_U8(u) => Self::join(Opcode::PUSH_U8, &[*u, 0, 0, 0]),
             Self::PUSH_I32(i) => Self::join(Opcode::PUSH_I32, &i.to_le_bytes()),
-            Self::PUSH_FN(addr) => Self::join(Opcode::PUSH_FN, &addr.to_le_bytes()),
-            Self::PUSH_CMD(addr) => Self::join(Opcode::PUSH_CMD, &addr.to_le_bytes()),
-            Self::PUSH_ARG(index) => Self::join(Opcode::PUSH_ARG, &index.to_le_bytes()),
+            Self::PUSH_FN(addr) => {
+                Self::join(Opcode::PUSH_FN, &addr.to_le_bytes())
+            }
+            Self::PUSH_CMD(addr) => {
+                Self::join(Opcode::PUSH_CMD, &addr.to_le_bytes())
+            }
+            Self::PUSH_ARG(index) => {
+                Self::join(Opcode::PUSH_ARG, &index.to_le_bytes())
+            }
             Self::DROP(n) => Self::join(Opcode::DROP, &n.to_le_bytes()),
             Self::FEED(argc) => Self::join(Opcode::FEED, &argc.to_le_bytes()),
             Self::BRANCH => Self::just(Opcode::BRANCH),

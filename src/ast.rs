@@ -4,9 +4,9 @@ use crate::{parser, parser::Rule};
 use pest::iterators::{Pair, Pairs};
 use std::collections::{HashMap, HashSet};
 
-const ENTRYPOINT: &str = "main.main";
+const ENTRYPOINT: &str = "main";
 
-#[derive(Debug, PartialEq)]
+#[derive(Default, Clone, Debug, PartialEq)]
 pub struct AST {
     pub declarations: HashMap<String, Declaration>,
 }
@@ -22,9 +22,8 @@ impl TryFrom<Pairs<'_, Rule>> for AST {
             .map(|decl| (decl.id.clone(), decl))
             .collect();
 
-        Self { declarations }
-            .valid()
-            .map(AST::without_unused_declarations)
+        Self { declarations }.valid()
+        // .map(AST::without_unused_declarations)
     }
 }
 
@@ -59,7 +58,8 @@ impl AST {
     }
 
     fn without_unused_declarations(mut self) -> Self {
-        let declared: HashSet<String> = self.declarations.keys().cloned().collect();
+        let declared: HashSet<String> =
+            self.declarations.keys().cloned().collect();
         let referenced = &self.get_ref_ids();
         let unused = declared.difference(referenced);
         for reference in unused {
