@@ -1,5 +1,7 @@
 // id :: Va. a -> a
 id = (x) => x;
+// iff :: Va. Bool -> a -> a -> a
+iff = (cond) => (x) => (y) => cond ? x : y;
 
 // add, sub, mul, div :: I32 -> I32 -> I32
 add = (x) => (y) => x + y;
@@ -32,6 +34,7 @@ prints = (str) => () => {
 
 module.exports = {
   id,
+  iff,
   add,
   sub,
   mul,

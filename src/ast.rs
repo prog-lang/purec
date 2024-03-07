@@ -57,6 +57,7 @@ impl AST {
         self.declarations.get(id).unwrap().clone()
     }
 
+    #[allow(dead_code)]
     fn without_unused_declarations(mut self) -> Self {
         let declared: HashSet<String> =
             self.declarations.keys().cloned().collect();

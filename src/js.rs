@@ -11,10 +11,12 @@ impl From<AST> for Program {
         let require_std = require("./std").constt("std");
         let module: Vec<JS> =
             ast.get_declarations().into_iter().map(JS::from).collect();
+        let execute = JS::name("main").call(vec![]).call(vec![]);
         Self(
             vec![require_std]
                 .into_iter()
                 .chain(module.into_iter())
+                .chain(vec![execute].into_iter())
                 .collect(),
         )
     }
@@ -34,7 +36,7 @@ impl JS {
     }
 
     fn new(name: &str, args: Vec<Self>) -> Self {
-        Self::Kw("new".into(), Self::name(name).call(vec![]).into())
+        Self::Kw("new".into(), Self::name(name).call(args).into())
     }
 
     fn returns(self) -> Self {
