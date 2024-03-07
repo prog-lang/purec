@@ -57,7 +57,9 @@ impl Type {
     pub fn free_type_vars(&self) -> HashSet<Binder> {
         match self {
             Self::Var(binder) => vec![binder.clone()].into(),
-            Self::Func(arg, res) => arg.free_type_vars().union(res.free_type_vars()),
+            Self::Func(arg, res) => {
+                arg.free_type_vars().union(res.free_type_vars())
+            }
             _ => HashSet::default(),
         }
     }

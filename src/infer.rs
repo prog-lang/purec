@@ -67,13 +67,18 @@ impl Substitution {
     fn unify(t1: &Type, t2: &Type) -> Substitution {
         println!("Trying to unify: {:?} & {:?}", t1, t2);
         match (t1, t2) {
-            (Type::Unit, Type::Unit) | (Type::Int, Type::Int) => Substitution::default(),
+            (Type::Unit, Type::Unit) | (Type::Int, Type::Int) => {
+                Substitution::default()
+            }
             (Type::Var(binder), t) | (t, Type::Var(binder)) => {
                 Self::bind(binder.clone(), t.clone())
             }
             (Type::Func(arg1, res1), Type::Func(arg2, res2)) => {
                 let s1 = Self::unify(arg1, arg2);
-                let s2 = Self::unify(&s1.apply(*res1.clone()), &s1.apply(*res2.clone()));
+                let s2 = Self::unify(
+                    &s1.apply(*res1.clone()),
+                    &s1.apply(*res2.clone()),
+                );
                 s2.union(&s1)
             }
             (t1, t2) => panic!("Unification error: {:?} & {:?}", t1, t2),
@@ -109,13 +114,17 @@ impl Substitution {
                 .0
                 .get(&binder)
                 .map_or(Type::Var(binder), |got| got.clone()),
-            Type::Func(arg, res) => Type::Func(self.apply(*arg).into(), self.apply(*res).into()),
+            Type::Func(arg, res) => {
+                Type::Func(self.apply(*arg).into(), self.apply(*res).into())
+            }
             other => other,
         }
     }
 
     fn apply_scheme(&self, scheme: Scheme) -> Scheme {
-        scheme.map_body(|body| self.without(scheme.guards.iter().cloned()).apply(body))
+        scheme.map_body(|body| {
+            self.without(scheme.guards.iter().cloned()).apply(body)
+        })
     }
 
     fn apply_context(&self, ctx: Context) -> Context {
@@ -165,7 +174,8 @@ impl HindleyMilner {
     /// Scheme, we must generate fresh type variables for each of its guards.
     fn instantiate(&mut self, scheme: Scheme) -> Type {
         let n = scheme.guards.len();
-        let sub: Substitution = scheme.guards.into_iter().zip(self.var.take(n)).into();
+        let sub: Substitution =
+            scheme.guards.into_iter().zip(self.var.take(n)).into();
         sub.apply(scheme.body)
     }
 
@@ -182,7 +192,12 @@ impl HindleyMilner {
         }
     }
 
-    fn infer_call(&mut self, ctx: Context, f: Expr, arg: Expr) -> (Substitution, Type) {
+    fn infer_call(
+        &mut self,
+        ctx: Context,
+        f: Expr,
+        arg: Expr,
+    ) -> (Substitution, Type) {
         let result_type = self.var.next();
         let (s1, f_type) = self.infer(ctx.clone(), f);
         let (s2, arg_type) = self.infer(s1.apply_context(ctx), arg);
@@ -192,7 +207,12 @@ impl HindleyMilner {
         (s3.union(&s2).union(&s1), s3.apply(result_type))
     }
 
-    fn infer_func(&mut self, ctx: Context, binder: Binder, body: Expr) -> (Substitution, Type) {
+    fn infer_func(
+        &mut self,
+        ctx: Context,
+        binder: Binder,
+        body: Expr,
+    ) -> (Substitution, Type) {
         let binder_type = self.var.next();
         let ctx_ = ctx.update(binder, Scheme::concrete(binder_type.clone()));
         let (subs, body_type) = self.infer(ctx_, body);
@@ -221,14 +241,21 @@ mod tests {
                 Type::Var("a".to_string()).into(),
             ),
         );
-        let add = Scheme::concrete(Type::func(vec![Type::Int, Type::Int], Type::Int));
-        let ctx = Context(HashMap::unit("id".to_string(), id).update("add".to_string(), add));
+        let add =
+            Scheme::concrete(Type::func(vec![Type::Int, Type::Int], Type::Int));
+        let ctx = Context(
+            HashMap::unit("id".to_string(), id).update("add".to_string(), add),
+        );
 
-        let expr = Expr::Call(Expr::Name("id".to_string()).into(), Expr::Int(42).into());
+        let expr = Expr::Call(
+            Expr::Name("id".to_string()).into(),
+            Expr::Int(42).into(),
+        );
         let t = infer(ctx.clone(), expr);
         assert_eq!(t, Type::Int);
 
-        let expr = Expr::call(Expr::Name("add".to_string()), vec![Expr::Int(1)]);
+        let expr =
+            Expr::call(Expr::Name("add".to_string()), vec![Expr::Int(1)]);
         let t = infer(ctx.clone(), expr);
         assert_eq!(t, Type::Func(Type::Int.into(), Type::Int.into()));
     }
