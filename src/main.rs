@@ -7,8 +7,8 @@ extern crate polytype;
 mod asm;
 mod ast;
 mod def;
-mod js;
 mod infer;
+mod js;
 mod parser;
 mod stdlib;
 mod types;
@@ -32,7 +32,7 @@ struct App {
     #[arg(short, long, default_value_t = String::from("main.js"))]
     output: String,
 
-    /// Output architecture (vm | js)
+    /// Output architecture (vm | node)
     #[arg(long, default_value_t = String::from("node"))]
     arch: String,
 }

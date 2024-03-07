@@ -3,12 +3,14 @@
 ```text
 Pure Compiler
 
-Usage: purec <SOURCE>
+Usage: purec [OPTIONS] <SOURCE>
 
 Arguments:
   <SOURCE>  Path to source code file
 
 Options:
-  -h, --help     Print help
-  -V, --version  Print version
+  -o, --output <OUTPUT>  Path to output file [default: main.js]
+      --arch <ARCH>      Output architecture (vm | node) [default: node]
+  -h, --help             Print help
+  -V, --version          Print version
 ```
