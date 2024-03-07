@@ -20,6 +20,6 @@ pub fn index() -> HashMap<String, usize> {
         ("std.sub".to_string(), StdLib::Sub_I32 as usize),
         ("std.mul".to_string(), StdLib::Mul_I32 as usize),
         ("std.div".to_string(), StdLib::Div_I32 as usize),
-        ("std.print".to_string(), StdLib::Print as usize),
+        ("std.prints".to_string(), StdLib::Print as usize),
     ])
 }

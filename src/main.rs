@@ -25,11 +25,11 @@ struct App {
     source: String,
 
     /// Path to output file
-    #[arg(short, long, default_value_t = String::from("main.pure.exe"))]
+    #[arg(short, long, default_value_t = String::from("main.js"))]
     output: String,
 
     /// Output architecture (vm | js)
-    #[arg(long, default_value_t = String::from("js"))]
+    #[arg(long, default_value_t = String::from("node"))]
     arch: String,
 }
 
@@ -76,11 +76,10 @@ impl App {
                     .expect("Failed to create executable file")
                     .write_all(program.as_vec().as_slice())
             }
-            "js" => {
+            "node" => {
                 let program: js::Program = ast.into();
                 let code: String = program.into();
-                let path = self.source.clone() + ".js";
-                fs::File::create(path)
+                fs::File::create(&self.output)
                     .expect("Failed to create executable file")
                     .write_all(code.as_bytes())
             }
