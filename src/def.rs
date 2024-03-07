@@ -82,13 +82,19 @@ impl Definition {
                         // Treat it as a closure.
                         Expr::Func(_, _) => vec![Op::PUSH_CMD(id.clone())],
                         // Treat it as value by calling it with a Unit argument.
-                        _ => vec![Op::PUSH_CMD(id.clone()), Op::PUSH_UNIT, Op::FEED(1)],
+                        _ => vec![
+                            Op::PUSH_CMD(id.clone()),
+                            Op::PUSH_UNIT,
+                            Op::FEED(1),
+                        ],
                     }
                 }
             }
             Expr::Call(f, args) => Self::expand(ast, f)
                 .into_iter()
-                .chain(args.iter().map(|expr| Self::expand(ast, expr)).flatten())
+                .chain(
+                    args.iter().map(|expr| Self::expand(ast, expr)).flatten(),
+                )
                 .chain(vec![Op::FEED(args.len() as u32)].into_iter())
                 .collect(),
             Expr::Func(_, body) => Self::expand(ast, body),

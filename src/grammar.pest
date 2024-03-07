@@ -4,7 +4,7 @@ file =
   ~ EOI
   }
 
-declaration = { id ~ ":=" ~ expr ~ ";" }
+declaration = { name ~ ":=" ~ expr ~ ";" }
 
 expr = _{ func | call | literal }
 
@@ -18,7 +18,7 @@ literal = _{ brack | id | name | int }
 brack = _{ "(" ~ expr ~ ")" }
 
 id = @{ (name ~ ".")+ ~ name }
-name = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
+name = @{ (ASCII_ALPHA | "_") ~ ASCII_ALPHANUMERIC* }
 int = @{ "0" | ("-"? ~ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) }
 
 COMMENT = _{ "{-" ~ (!"-}" ~ ANY)* ~ "-}" }
